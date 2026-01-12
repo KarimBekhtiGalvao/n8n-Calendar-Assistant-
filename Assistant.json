@@ -1,0 +1,292 @@
+{
+  "name": "Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "test",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        0
+      ],
+      "id": "13a8e572-8418-4bd7-8224-2020c0f09f7e",
+      "name": "Webhook",
+      "webhookId": "ba2d0d3c-0d31-4bb1-a7cc-273dc7e870bf"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "6edb35d91a0a6ff2c8ca51ac284827df67da59c108875a13877b4a8fe999e8e1@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Assistant"
+        },
+        "start": "={{ $json.Start.trim() }}",
+        "end": "={{ $json.End.trim() }}",
+        "useDefaultReminders": "={{ true }}",
+        "additionalFields": {
+          "allday": "no",
+          "attendees": [],
+          "location": "={{ $node[\"Webhook\"].json.body.Location }} ",
+          "summary": "={{ $node[\"Webhook\"].json.body.Name }} ",
+          "visibility": "default"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        0
+      ],
+      "id": "53f4c90c-7a87-4381-a86a-1b0e805c6228",
+      "name": "Create an event",
+      "retryOnFail": false,
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "p3Oo38VuFlvQGnIm",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5abe080e-941e-4523-a54d-9aae487f0adf",
+              "name": "normalizedDate",
+              "value": "={{ $json.body.Date.replaceAll(\"/\", \"-\") }}",
+              "type": "string"
+            },
+            {
+              "id": "d3c7d24b-5c46-4ad8-a654-f270c2e3bbdd",
+              "name": "normalizedHours",
+              "value": "={{ $json.body.Hours.replace(\"h\", \":\") }}",
+              "type": "string"
+            },
+            {
+              "id": "44ea3c50-cf6a-4c17-8f80-9ed6d23b3651",
+              "name": "Duration",
+              "value": "={{ $json.body.Duration }}",
+              "type": "string"
+            },
+            {
+              "id": "5265315c-5771-47cf-8619-2f2e9bbef45c",
+              "name": "Timezone",
+              "value": "-05:00",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -512,
+        -144
+      ],
+      "id": "6958dcf5-6b3e-4043-bd8c-02454468e03a",
+      "name": "normalization"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0f40d317-d295-4a89-a575-396671977876",
+              "name": "startDateString",
+              "value": "={{ $json.normalizedDate + \"T\"+$json.normalizedHours+\":00\"+$json.Timezone}}",
+              "type": "string"
+            },
+            {
+              "id": "dca23138-f257-4084-a147-a0e6564ceb62",
+              "name": "Duration",
+              "value": "={{ $json.Duration }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        -144
+      ],
+      "id": "a74146ec-e203-4339-88c3-fa79b2083180",
+      "name": "StartDate"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "afbe0d02-7d70-4064-a64d-e8021e0ade33",
+              "name": "Complete",
+              "value": "={{ $json.startDateString}}",
+              "type": "string"
+            },
+            {
+              "id": "52fbe213-23c4-4132-9d98-dcab9db55bb5",
+              "name": "DurationMinutes",
+              "value": "={{ parseInt($json.Duration.split(\":\")[0]) * 60 + parseInt($json.Duration.split(\":\")[1]) }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        -144
+      ],
+      "id": "615199cd-3811-48bb-99dd-fe6b7f446e29",
+      "name": "CompleteDate"
+    },
+    {
+      "parameters": {
+        "operation": "addToDate",
+        "magnitude": "={{ $json.Complete }}",
+        "timeUnit": "minutes",
+        "duration": "={{ $json.DurationMinutes }}",
+        "outputFieldName": "EndTime",
+        "options": {
+          "includeInputFields": true
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        -144
+      ],
+      "id": "f43ad7f7-4730-47c4-96e6-5deb94b41d3c",
+      "name": "EndTime"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "afbe0d02-7d70-4064-a64d-e8021e0ade33",
+              "name": "Start",
+              "value": "={{ $node[\"CompleteDate\"].json.Complete.replace(/[-+]\\d{2}:\\d{2}$/, \"\") }}\n",
+              "type": "string"
+            },
+            {
+              "id": "52fbe213-23c4-4132-9d98-dcab9db55bb5",
+              "name": "End",
+              "value": "={{ $node[\"EndTime\"].json.EndTime.replace(/\\.\\d{3}|[-+]\\d{2}:\\d{2}$/g, '') }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        0
+      ],
+      "id": "6111e808-3a98-4edb-a78c-8963ca71be6d",
+      "name": "CompleteDate1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "normalization",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CompleteDate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "normalization": {
+      "main": [
+        [
+          {
+            "node": "StartDate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "StartDate": {
+      "main": [
+        [
+          {
+            "node": "CompleteDate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CompleteDate": {
+      "main": [
+        [
+          {
+            "node": "EndTime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EndTime": {
+      "main": [
+        [
+          {
+            "node": "CompleteDate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CompleteDate1": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "73613ec7-7bad-456e-89fd-67de9d3e7152",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "85a1c5db5d9423b2d1de1085fcc24b7b2e7f0fa7b0b2f1ee443131b9fc63714e"
+  },
+  "id": "OD1VpanNyTlZYsMxXDE19",
+  "tags": []
+}
