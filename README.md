@@ -4,11 +4,11 @@
 This project demonstrates a complete automation pipeline that connects an ElevenLabs agent to Google Calendar using n8n.
 The system receives structured appointment data from ElevenLabs, normalizes dates and durations inside n8n, and creates calendar events reliably.
 
-##Overview
-###Goal
+## Overview
+### Goal
 Automatically create Google Calendar events from conversational AI output.
 
-###Flow
+### Flow
 
 ElevenLabs agent sends structured JSON to an n8n webhook
 
@@ -55,23 +55,15 @@ Example payload sent to n8n:
 Data Processing in n8n
 
 Inside n8n, the workflow:
-
 Converts date + time into ISO format
-
 Converts duration into minutes
-
 Adds duration to compute end time
-
 Removes:
-
 timezone offsets
-
 milliseconds
-
 hidden characters (\n)
 
 Produces clean values such as:
-
 {
   "Start": "2026-01-11T09:00:00",
   "End": "2026-01-11T09:30:00"
@@ -94,6 +86,5 @@ Google Cloud project
 Google Calendar API enabled
 OAuth 2.0 credentials configured
 
-ElevenLabs agent
 
 ngrok (to expose local webhook over HTTPS)
